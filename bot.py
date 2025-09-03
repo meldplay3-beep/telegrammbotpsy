@@ -9,19 +9,19 @@ from telegram.ext import (
     ConversationHandler, MessageHandler, filters
 )
 
-# Настройка логов
+# Логи
 logging.basicConfig(
     format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
     level=logging.INFO
 )
 logger = logging.getLogger(__name__)
 
-# Загрузка токена
+# Токен
 TOKEN = os.getenv("TELEGRAM_TOKEN")
 if not TOKEN:
     raise SystemExit("Please set TELEGRAM_TOKEN in Environment Variables")
 
-# Настройка базы данных
+# База данных
 DB_FILE = "database.db"
 
 def init_db():
@@ -39,7 +39,7 @@ def init_db():
             user_id INTEGER,
             situation TEXT,
             feelings TEXT,
-            values TEXT,
+            "values" TEXT,
             created_at TEXT
         )
     """)
@@ -57,7 +57,11 @@ def get_user_name(user_id: int):
 def set_user_name(user_id: int, name: str):
     conn = sqlite3.connect(DB_FILE)
     cur = conn.cursor()
-    cur.execute("INSERT INTO users (user_id, name) VALUES (?, ?) ON CONFLICT(user_id) DO UPDATE SET name = excluded.name", (user_id, name))
+    cur.execute(
+        "INSERT INTO users (user_id, name) VALUES (?, ?) "
+        "ON CONFLICT(user_id) DO UPDATE SET name = excluded.name",
+        (user_id, name)
+    )
     conn.commit()
     conn.close()
 
@@ -65,13 +69,13 @@ def save_reflection(user_id: int, situation: str, feelings: str, values: str):
     conn = sqlite3.connect(DB_FILE)
     cur = conn.cursor()
     cur.execute(
-        "INSERT INTO reflections (user_id, situation, feelings, values, created_at) VALUES (?, ?, ?, ?, ?)",
+        'INSERT INTO reflections (user_id, situation, feelings, "values", created_at) VALUES (?, ?, ?, ?, ?)',
         (user_id, situation, feelings, values, datetime.now().isoformat())
     )
     conn.commit()
     conn.close()
 
-# Состояния для ConversationHandler
+# Состояния
 ASK_NAME, CALM_TALK, REFLECT_Q1, REFLECT_Q2, REFLECT_Q3 = range(5)
 
 # Дыхательные упражнения и аффирмации
@@ -92,7 +96,7 @@ def get_name_from_db(user_id: int) -> str:
     name = get_user_name(user_id)
     return name if name else "друг"
 
-# Хэндлеры
+# Handlers
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     user_id = update.effective_user.id
     name = get_user_name(user_id)
@@ -101,7 +105,11 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         return ASK_NAME
     else:
         await update.message.reply_text(
-            f"Снова рад тебя видеть, {name} 💙\nКоманды:\n• /calm — режим успокоения\n• /reflect — разбор ситуации\n• /setname — изменить имя\n• /cancel — прервать разговор"
+            f"Снова рад тебя видеть, {name} 💙\nКоманды:\n"
+            "• /calm — режим успокоения\n"
+            "• /reflect — разбор ситуации\n"
+            "• /setname — изменить имя\n"
+            "• /cancel — прервать разговор"
         )
         return ConversationHandler.END
 
